@@ -38,8 +38,8 @@ The application binds to the local computer only. An optional `PORT` environment
 | Device | Actions | Rules |
 | --- | --- | --- |
 | Light | `TurnOn`, `TurnOff` | Crossfades matching photographic lighting states: ceiling-cove lights, pendant and table lamp illuminate the actual room. |
-| Fan | `TurnOn`, `TurnOff`, `IncreaseSpeed`, `DecreaseSpeed` | Levels 1–3. Speed changes require the fan to be on. Speed is preserved when off. At limits, the controller rejects further changes; manual buttons are disabled. |
-| AC | `TurnOn`, `TurnOff`, `IncreaseTemp`, `DecreaseTemp`, `SetTemp` | Whole degrees, 16–30°C by default. The temperature is always displayed directly on the AC, with a separate OFF/COOLING status. Out-of-range and missing values are rejected. Adjusting an off AC saves the setting and explicitly reports that the AC is still off. |
+| Fan | `TurnOn`, `TurnOff`, `IncreaseSpeed`, `DecreaseSpeed` | Levels 1–3. Speed changes require the fan to be on. Speed is preserved when off. The blades gradually decelerate for approximately 3–5 seconds after OFF; turning it back on resumes from its current rotation. Reduced-motion preferences disable rotation. At limits, the controller rejects further changes; manual buttons are disabled. |
+| AC | `TurnOn`, `TurnOff`, `IncreaseTemp`, `DecreaseTemp`, `SetTemp` | Whole degrees, 16–30°C by default. The unit displays its temperature and COOLING while on, and only OFF when switched off. The saved temperature is preserved in the manual controls. Out-of-range and missing values are rejected. Adjusting an off AC saves the setting and explicitly reports that the AC is still off. |
 | Curtain | `Open`, `Close` | Smoothly opens/closes the two panels and changes daylight. |
 
 Initial state: light OFF, fan OFF at level 1, AC OFF at 24°C, curtains CLOSED. `AC_MIN_TEMP` and `AC_MAX_TEMP` configure the temperature bounds before startup; they must contain the initial 24°C setting and stay within 10–40°C. The controller validates every intent, device, compatibility, required value, limit, and relevant current state before applying a command. Rejected commands never partially change the room.
@@ -147,6 +147,7 @@ Manual controls ─────────────────────�
 | `frontend/assets/bedroom/` | Local photographic daylight, warm-light and curtain plates with generation provenance. |
 | `frontend/css/style.css` | Responsive warm/sage styling, room states, motion and focus behavior. |
 | `frontend/js/bedroom.js` | Render server state and history; manual-control availability. |
+| `frontend/js/fan.js` | Perspective rotor motion, smooth speed changes and deceleration, reduced-motion handling. |
 | `frontend/js/voice.js` | Microphone lifecycle, recording, browser speech, permission/no-speech errors. |
 | `frontend/js/app.js` | Assistant stages, manual commands, state synchronization and feedback. |
 | `frontend/js/api.js` | Shared HTTP requests, error handling and request timeouts. |

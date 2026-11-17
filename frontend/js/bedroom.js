@@ -1,3 +1,5 @@
+import { FanMotion } from './fan.js';
+
 let currentState = null;
 let currentRevision = -1;
 let currentSession = null;
@@ -5,6 +7,10 @@ let busy = false;
 let online = false;
 
 const byId = (id) => document.getElementById(id);
+const fanMotion = new FanMotion(document.querySelector('.fan-rotor'), byId('bedroom'), (motion) => {
+  byId('fan-description').textContent = motion === 'slowing' ? 'Slowing to a stop…'
+    : currentState?.fan.state === 'ON' ? 'A comfortable breeze' : 'Turn on to adjust speed';
+});
 
 export function setControlsAvailable(available, pending = false) {
   online = available;
@@ -46,13 +52,15 @@ export function renderBedroom(snapshot) {
   const { light, fan, ac, curtain } = currentState;
   const room = byId('bedroom');
   Object.assign(room.dataset, { light: light.state, fan: fan.state, ac: ac.state, curtain: curtain.state, speed: fan.speed });
-  byId('ac-scene-temp').textContent = `${ac.temperature}°C`;
-  byId('ac-scene-status').textContent = ac.state === 'ON' ? 'COOLING' : 'OFF';
+  byId('ac-scene-temp').textContent = ac.state === 'ON' ? `${ac.temperature}°C` : 'OFF';
+  byId('ac-scene-status').textContent = ac.state === 'ON' ? 'COOLING' : '';
   byId('light-state').textContent = light.state;
   byId('light-state').classList.toggle('active', light.state === 'ON');
   byId('fan-state').textContent = fan.state;
   byId('fan-speed').textContent = `Level ${fan.speed}`;
-  byId('fan-description').textContent = fan.state === 'ON' ? 'A comfortable breeze' : 'Turn on to adjust speed';
+  fanMotion.setState(fan.state === 'ON', fan.speed);
+  byId('fan-description').textContent = room.dataset.fanMotion === 'slowing' ? 'Slowing to a stop…'
+    : fan.state === 'ON' ? 'A comfortable breeze' : 'Turn on to adjust speed';
   byId('ac-state').textContent = ac.state;
   byId('ac-description').textContent = ac.state === 'ON' ? 'Cooling your space' : 'Saved temperature · AC off';
   const temperatureInput = byId('ac-temperature');

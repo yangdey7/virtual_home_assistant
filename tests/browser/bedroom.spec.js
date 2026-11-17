@@ -7,6 +7,27 @@ async function ready(page) {
   await expect(page.locator('#connection-status')).toHaveAttribute('data-online', 'true');
 }
 
+// Measure actual blade displacement across animation frames, in degrees/second.
+async function fanRotationSpeed(page, duration = 220) {
+  return page.locator('.fan-rotor').evaluate((rotor, duration) => new Promise((resolve) => {
+    const angle = () => {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(rotor).transform);
+      return Math.atan2(matrix.b, matrix.a) * 180 / Math.PI;
+    };
+    const start = performance.now();
+    let previous = angle();
+    let distance = 0;
+    const sample = (now) => {
+      const current = angle();
+      distance += (current - previous + 360) % 360;
+      previous = current;
+      if (now - start >= duration) resolve(distance * 1000 / (now - start));
+      else requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }), duration);
+}
+
 async function predict(request, command) {
   await request.post('/__test__/prediction', { data: { ...command, confidence: command.confidence ?? .99 } });
 }
@@ -36,8 +57,8 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
   page.on('pageerror', (error) => errors.push(error.message));
   await ready(page);
   const room = page.locator('#bedroom');
-  await expect(page.locator('#ac-scene-temp')).toHaveText('24°C');
-  await expect(page.locator('#ac-scene-status')).toHaveText('OFF');
+  await expect(page.locator('#ac-scene-temp')).toHaveText('OFF');
+  await expect(page.locator('#ac-scene-status')).toBeEmpty();
   await room.screenshot({ path: 'test-results/room-daylight-closed-v2.png' });
   await button(page, 'Light', 'TurnOn').click();
   await expect(room).toHaveAttribute('data-light', 'ON');
@@ -50,7 +71,8 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
   await expect(button(page, 'Fan', 'IncreaseSpeed')).toBeDisabled();
   await button(page, 'Fan', 'TurnOn').click();
   await expect(room).toHaveAttribute('data-fan', 'ON');
-  await expect(page.locator('.fan-rotor')).toHaveCSS('animation-play-state', 'running');
+  await expect(room).toHaveAttribute('data-fan-motion', 'running');
+  await expect.poll(() => fanRotationSpeed(page)).toBeGreaterThan(0);
   await button(page, 'Fan', 'IncreaseSpeed').click();
   await expect(page.locator('#fan-speed')).toHaveText('Level 2');
   await button(page, 'Fan', 'IncreaseSpeed').click();
@@ -61,7 +83,12 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
   await expect(page.locator('#fan-speed')).toHaveText('Level 1');
   await expect(button(page, 'Fan', 'DecreaseSpeed')).toBeDisabled();
   await button(page, 'Fan', 'TurnOff').click();
-  await expect(page.locator('.fan-rotor')).toHaveCSS('animation-play-state', 'paused');
+  await expect(room).toHaveAttribute('data-fan', 'OFF');
+  await expect(room).toHaveAttribute('data-fan-motion', 'slowing');
+  await expect(page.locator('#fan-description')).toHaveText('Slowing to a stop…');
+  expect(await fanRotationSpeed(page)).toBeGreaterThan(0);
+  await expect(room).toHaveAttribute('data-fan-motion', 'stopped', { timeout: 7000 });
+  expect(await fanRotationSpeed(page)).toBe(0);
 
   await button(page, 'AC', 'TurnOn').click();
   await expect(room).toHaveAttribute('data-ac', 'ON');
@@ -74,14 +101,20 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
   await page.locator('#ac-temperature').press('Enter');
   await expect(page.locator('#ac-scene-temp')).toHaveText('22°C');
   await button(page, 'AC', 'TurnOff').click();
-  await expect(page.locator('#ac-scene-temp')).toHaveText('22°C');
-  await expect(page.locator('#ac-scene-status')).toHaveText('OFF');
+  await expect(page.locator('#ac-scene-temp')).toHaveText('OFF');
+  await expect(page.locator('#ac-scene-status')).toBeEmpty();
   await expect(page.locator('#ac-temperature')).toHaveValue('22');
   await button(page, 'AC', 'IncreaseTemp').click();
-  await expect(page.locator('#ac-scene-temp')).toHaveText('23°C');
+  await expect(page.locator('#ac-scene-temp')).toHaveText('OFF');
+  await expect(page.locator('#ac-temperature')).toHaveValue('23');
   await expect(room).toHaveAttribute('data-ac', 'OFF');
   await button(page, 'AC', 'DecreaseTemp').click();
+  await expect(page.locator('#ac-scene-temp')).toHaveText('OFF');
+  await expect(page.locator('#ac-temperature')).toHaveValue('22');
+  await button(page, 'AC', 'TurnOn').click();
   await expect(page.locator('#ac-scene-temp')).toHaveText('22°C');
+  await button(page, 'AC', 'TurnOff').click();
+  await expect(page.locator('#ac-scene-temp')).toHaveText('OFF');
 
   await button(page, 'Curtain', 'Open').click();
   await expect(room).toHaveAttribute('data-curtain', 'OPEN');
@@ -93,6 +126,38 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
   await expect(room).toHaveAttribute('data-curtain', 'CLOSED');
   await expect(page.locator('#history-list .history-entry').first()).toContainText('Successful');
   expect(errors).toEqual([]);
+});
+
+test('fan gradually decelerates and can restart while still coasting', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'TurnOff', device: 'Fan' } });
+  await ready(page);
+  const room = page.locator('#bedroom');
+  await button(page, 'Fan', 'TurnOn').click();
+  while (await page.locator('#fan-speed').textContent() !== 'Level 1') {
+    await button(page, 'Fan', 'DecreaseSpeed').click();
+  }
+  await expect.poll(() => fanRotationSpeed(page)).toBeGreaterThan(185);
+  await button(page, 'Fan', 'TurnOff').click();
+  await expect(room).toHaveAttribute('data-fan-motion', 'slowing');
+  const earlySpeed = await fanRotationSpeed(page);
+  // Compare real rotation at two times during the same natural deceleration.
+  await page.waitForTimeout(1200);
+  const laterSpeed = await fanRotationSpeed(page);
+  expect(laterSpeed).toBeGreaterThan(0);
+  expect(laterSpeed).toBeLessThan(earlySpeed);
+  // Refreshing the same OFF snapshot must not restart the slowdown.
+  const snapshot = await (await request.get('/api/state')).json();
+  await page.evaluate(async (snapshot) => {
+    const { renderBedroom } = await import('/static/js/bedroom.js');
+    renderBedroom(snapshot);
+  }, snapshot);
+  expect(await fanRotationSpeed(page)).toBeLessThan(laterSpeed);
+  await button(page, 'Fan', 'TurnOn').click();
+  await expect(room).toHaveAttribute('data-fan-motion', 'running');
+  await expect.poll(() => fanRotationSpeed(page)).toBeGreaterThan(185);
+  await button(page, 'Fan', 'TurnOff').click();
+  await expect(room).toHaveAttribute('data-fan-motion', 'stopped', { timeout: 7000 });
+  expect(await fanRotationSpeed(page)).toBe(0);
 });
 
 test('prediction is displayed before execution, and confirmation waits for the controller', async ({ page, request }) => {
@@ -189,7 +254,9 @@ test('missing-model notice and typed-command failure are explicit', async ({ pag
   await expect(button(page, 'Light', 'TurnOn')).toBeEnabled();
 });
 
-test('desktop and mobile layouts fit, preserve keyboard controls, and respect reduced motion', async ({ page }) => {
+test('desktop and mobile layouts fit, preserve keyboard controls, and respect reduced motion', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'TurnOn', device: 'Light' } });
+  await request.post('/api/control', { data: { intent: 'Open', device: 'Curtain' } });
   await ready(page);
   await expect(page.locator('.light-glow')).toHaveCSS('opacity', '1');
   await expect(page.locator('.curtain-left')).toHaveCSS('opacity', '0');
@@ -203,6 +270,11 @@ test('desktop and mobile layouts fit, preserve keyboard controls, and respect re
   await button(page, 'Light', 'TurnOn').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#bedroom')).toHaveAttribute('data-light', 'ON');
+  if (await page.locator('#bedroom').getAttribute('data-fan') !== 'ON') {
+    await button(page, 'Fan', 'TurnOn').click();
+  }
+  await expect.poll(() => fanRotationSpeed(page)).toBeGreaterThan(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.fan-rotor')).toHaveCSS('animation-name', 'none');
+  await expect.poll(() => fanRotationSpeed(page)).toBe(0);
 });
