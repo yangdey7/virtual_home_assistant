@@ -3,7 +3,7 @@ Developing as a part of NLP project.
 
 # Bhutanese Code-Mixed Smart Home Assistant
 
-A local, assistive smart-bedroom simulation with an illustrated bedroom, animated devices, accessible manual controls, speech input, and a Python command controller. No physical IoT hardware, paid API, frontend build, or cloud deployment is required.
+A local, assistive smart-bedroom simulation with a photorealistic bedroom, animated devices, accessible manual controls, speech input, and a Python command controller. No physical IoT hardware, paid API, frontend build, or cloud deployment is required.
 
 **Model integration status:** the initial checkout contained only the two-line README above. No model weights, tokenizer, model architecture, label metadata, inference script, dataset, speech implementation, or dependency file was present. You indicated that you will add the trained model later. The interface and controller work now; **real voice/text device control is unavailable until your original model is connected**. The application never substitutes keyword rules or a fake classifier. No original model or project data was altered or retrained.
 
@@ -25,7 +25,7 @@ The application binds to the local computer only. An optional `PORT` environment
 
 ## What works
 
-- A responsive SVG bedroom with textured bedding, wooden furniture, a mountain-view window, pendant light, ceiling fan, wall AC, and movable curtains. It uses local assets only.
+- A responsive photorealistic bedroom inspired by the supplied reference: charcoal bedding, oak furniture, taupe linen curtains, indoor plants, warm ceiling-cove lighting, a pendant, ceiling fan, and wall AC. It uses local photographic plates with SVG device layers; see `frontend/assets/bedroom/README.md` for asset provenance and generation prompts.
 - Warm illumination, fan rotation at three speeds, AC display and airflow, and curtain/daylight transitions. Reduced-motion preferences disable movement while retaining written state labels.
 - All 13 specified device actions, controlled through a single backend manager.
 - Keyboard-operable manual controls, an exact AC temperature input, prominent microphone, visible feedback, a skip link, and a live announcement region.
@@ -37,9 +37,9 @@ The application binds to the local computer only. An optional `PORT` environment
 
 | Device | Actions | Rules |
 | --- | --- | --- |
-| Light | `TurnOn`, `TurnOff` | Changes illumination and the warm pendant source. |
+| Light | `TurnOn`, `TurnOff` | Crossfades matching photographic lighting states: ceiling-cove lights, pendant and table lamp illuminate the actual room. |
 | Fan | `TurnOn`, `TurnOff`, `IncreaseSpeed`, `DecreaseSpeed` | Levels 1–3. Speed changes require the fan to be on. Speed is preserved when off. At limits, the controller rejects further changes; manual buttons are disabled. |
-| AC | `TurnOn`, `TurnOff`, `IncreaseTemp`, `DecreaseTemp`, `SetTemp` | Whole degrees, 16–30°C by default. Out-of-range and missing values are rejected. Adjusting an off AC saves the setting and explicitly reports that the AC is still off. |
+| AC | `TurnOn`, `TurnOff`, `IncreaseTemp`, `DecreaseTemp`, `SetTemp` | Whole degrees, 16–30°C by default. The temperature is always displayed directly on the AC, with a separate OFF/COOLING status. Out-of-range and missing values are rejected. Adjusting an off AC saves the setting and explicitly reports that the AC is still off. |
 | Curtain | `Open`, `Close` | Smoothly opens/closes the two panels and changes daylight. |
 
 Initial state: light OFF, fan OFF at level 1, AC OFF at 24°C, curtains CLOSED. `AC_MIN_TEMP` and `AC_MAX_TEMP` configure the temperature bounds before startup; they must contain the initial 24°C setting and stay within 10–40°C. The controller validates every intent, device, compatibility, required value, limit, and relevant current state before applying a command. Rejected commands never partially change the room.
@@ -143,7 +143,8 @@ Manual controls ─────────────────────�
 | `backend/device_manager.py` | Shared state, validation, atomic commands, bounded history under an `RLock`. |
 | `backend/model_inference.py` | Configured original-provider loading, output mapping, confidence validation. |
 | `backend/speech_recognition.py` | Optional local pretrained Whisper lifecycle and transcription. |
-| `frontend/index.html` | Accessible layout and original SVG bedroom/objects. |
+| `frontend/index.html` | Accessible layout, photographic room plates, perspective fan, moving curtain masks and live AC display. |
+| `frontend/assets/bedroom/` | Local photographic daylight, warm-light and curtain plates with generation provenance. |
 | `frontend/css/style.css` | Responsive warm/sage styling, room states, motion and focus behavior. |
 | `frontend/js/bedroom.js` | Render server state and history; manual-control availability. |
 | `frontend/js/voice.js` | Microphone lifecycle, recording, browser speech, permission/no-speech errors. |

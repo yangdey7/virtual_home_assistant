@@ -46,7 +46,8 @@ export function renderBedroom(snapshot) {
   const { light, fan, ac, curtain } = currentState;
   const room = byId('bedroom');
   Object.assign(room.dataset, { light: light.state, fan: fan.state, ac: ac.state, curtain: curtain.state, speed: fan.speed });
-  byId('ac-scene-temp').textContent = ac.state === 'ON' ? `${ac.temperature}°` : 'OFF';
+  byId('ac-scene-temp').textContent = `${ac.temperature}°C`;
+  byId('ac-scene-status').textContent = ac.state === 'ON' ? 'COOLING' : 'OFF';
   byId('light-state').textContent = light.state;
   byId('light-state').classList.toggle('active', light.state === 'ON');
   byId('fan-state').textContent = fan.state;

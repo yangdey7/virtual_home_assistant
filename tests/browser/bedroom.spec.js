@@ -36,9 +36,13 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
   page.on('pageerror', (error) => errors.push(error.message));
   await ready(page);
   const room = page.locator('#bedroom');
+  await expect(page.locator('#ac-scene-temp')).toHaveText('24°C');
+  await expect(page.locator('#ac-scene-status')).toHaveText('OFF');
+  await room.screenshot({ path: 'test-results/room-daylight-closed-v2.png' });
   await button(page, 'Light', 'TurnOn').click();
   await expect(room).toHaveAttribute('data-light', 'ON');
   await expect(page.locator('.light-glow')).toHaveCSS('opacity', '1');
+  await room.screenshot({ path: 'test-results/room-warm-closed-v2.png' });
   await button(page, 'Light', 'TurnOff').click();
   await expect(room).toHaveAttribute('data-light', 'OFF');
   await expect(page.locator('.light-glow')).toHaveCSS('opacity', '0');
@@ -61,21 +65,30 @@ test('all manual actions update the real backend and bedroom objects', async ({ 
 
   await button(page, 'AC', 'TurnOn').click();
   await expect(room).toHaveAttribute('data-ac', 'ON');
+  await expect(page.locator('#ac-scene-status')).toHaveText('COOLING');
   await button(page, 'AC', 'IncreaseTemp').click();
   await expect(page.locator('#ac-temperature')).toHaveValue('25');
   await button(page, 'AC', 'DecreaseTemp').click();
   await expect(page.locator('#ac-temperature')).toHaveValue('24');
   await page.locator('#ac-temperature').fill('22');
   await page.locator('#ac-temperature').press('Enter');
-  await expect(page.locator('#ac-scene-temp')).toHaveText('22°');
+  await expect(page.locator('#ac-scene-temp')).toHaveText('22°C');
   await button(page, 'AC', 'TurnOff').click();
-  await expect(page.locator('#ac-scene-temp')).toHaveText('OFF');
+  await expect(page.locator('#ac-scene-temp')).toHaveText('22°C');
+  await expect(page.locator('#ac-scene-status')).toHaveText('OFF');
   await expect(page.locator('#ac-temperature')).toHaveValue('22');
+  await button(page, 'AC', 'IncreaseTemp').click();
+  await expect(page.locator('#ac-scene-temp')).toHaveText('23°C');
+  await expect(room).toHaveAttribute('data-ac', 'OFF');
+  await button(page, 'AC', 'DecreaseTemp').click();
+  await expect(page.locator('#ac-scene-temp')).toHaveText('22°C');
 
   await button(page, 'Curtain', 'Open').click();
   await expect(room).toHaveAttribute('data-curtain', 'OPEN');
   await expect(page.locator('.daylight')).toHaveCSS('opacity', '1');
   await expect(page.locator('.curtain-left')).toHaveCSS('transform', 'matrix(0.18, 0, 0, 1, 0, 0)');
+  await expect(page.locator('.curtain-left')).toHaveCSS('opacity', '0');
+  await room.screenshot({ path: 'test-results/room-daylight-open-v2.png' });
   await button(page, 'Curtain', 'Close').click();
   await expect(room).toHaveAttribute('data-curtain', 'CLOSED');
   await expect(page.locator('#history-list .history-entry').first()).toContainText('Successful');
@@ -178,6 +191,8 @@ test('missing-model notice and typed-command failure are explicit', async ({ pag
 
 test('desktop and mobile layouts fit, preserve keyboard controls, and respect reduced motion', async ({ page }) => {
   await ready(page);
+  await expect(page.locator('.light-glow')).toHaveCSS('opacity', '1');
+  await expect(page.locator('.curtain-left')).toHaveCSS('opacity', '0');
   await page.screenshot({ path: 'test-results/bedroom-desktop.png', fullPage: true });
   for (const width of [320, 390, 740, 900, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
