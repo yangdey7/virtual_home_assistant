@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f0">
+  <meta name="description" content="An accessible, voice-controlled virtual bedroom for the Bhutanese Code-Mixed Smart Home Assistant.">
+  <title>Your bedroom · Bhutanese Smart Home</title>
+  <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script type="module" src="/static/js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to bedroom controls</a>
+  <svg class="icon-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></symbol>
+      <symbol id="i-light" viewBox="0 0 24 24"><path d="M8 15a6 6 0 1 1 8 0l-1 3H9Z"/><path d="M9 21h6m-5-3h4"/></symbol>
+      <symbol id="i-fan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 10C6 2 16 0 17 5c.6 2-2 4-4 5m1 2c9-1 5 9 1 7-2-1-2-4-2-5m-3-1c-3 9-10 1-7-2 2-2 5-1 7 1"/></symbol>
+      <symbol id="i-ac" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="10" rx="3"/><path d="M5 10h14M6 17v3m6-3v4m6-4v3"/></symbol>
+      <symbol id="i-curtain" viewBox="0 0 24 24"><path d="M2 3h20M4 3v18h5V3m6 0v18h5V3M9 16l-5-3m11 3 5-3"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+      <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10m-6-7a9 9 0 1 0 12 0"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M5 9h1m3 0h1m3 0h1m3 0h1M5 13h1m3 0h1m3 0h1m3 0h1M7 16h10"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Bhutanese Code-Mixed Smart Home Assistant home">
+      <span class="brand-mark"><svg class="icon"><use href="#i-home"/></svg></span>
+      <span><strong>Bhutanese Code-Mixed<br class="brand-break"> Smart Home Assistant</strong><small>Assistive Voice-Controlled Smart Home</small></span>
+    </a>
+    <div class="header-meta"><span class="connection" id="connection-status"><span class="status-dot"></span>Connecting</span><span class="header-divider"></span><span class="local-time" id="local-time">Thimphu · Bhutan</span></div>
+  </header>
+
+  <main id="main" class="page-shell">
+    <section class="page-intro" aria-labelledby="page-title">
+      <div><div class="eyebrow"><span class="tiny-line"></span> YOUR SPACE, AT YOUR PACE</div><h1 id="page-title">Comfort starts with a word.</h1><p>A familiar space. A little more independence.</p></div>
+      <div class="room-summary"><span class="room-summary-icon"><svg class="icon"><use href="#i-home"/></svg></span><div><strong>Your bedroom</strong><span id="room-summary">Waiting for room state</span></div></div>
+    </section>
+
+    <div class="workspace">
+      <div class="room-column">
+        <section class="room-card" aria-labelledby="room-title">
+          <div class="room-toolbar"><div><span class="live-dot"></span><h2 id="room-title">Bedroom</h2><span class="room-kind">Virtual space</span></div><span id="scene-caption" class="scene-caption">Curtains closed · Light off</span></div>
+          <div class="bedroom" id="bedroom" data-light="OFF" data-fan="OFF" data-ac="OFF" data-curtain="CLOSED" data-speed="1">
+            <svg class="room-art" viewBox="0 0 1200 820" role="img" aria-labelledby="scene-title scene-description" xmlns="http://www.w3.org/2000/svg">
+              <title id="scene-title">Your virtual smart bedroom</title><desc id="scene-description">A warm bedroom with a double bed, ceiling fan, pendant light, wall-mounted air conditioner and window curtains. Use the controls below to interact.</desc>
+              <defs>
+                <linearGradient id="wall" x2=".8" y2="1"><stop stop-color="#ece4d7"/><stop offset="1" stop-color="#cbbca9"/></linearGradient>
+                <linearGradient id="side-wall" x2="1" y2=".4"><stop stop-color="#bcae9c"/><stop offset="1" stop-color="#d4c8b8"/></linearGradient>
+                <linearGradient id="floor" x2=".4" y2="1"><stop stop-color="#b69b7e"/><stop offset="1" stop-color="#d9c5a7"/></linearGradient>
+                <linearGradient id="wood" x2="1" y2="0"><stop stop-color="#86684c"/><stop offset=".45" stop-color="#b1916b"/><stop offset="1" stop-color="#836448"/></linearGradient>
+                <linearGradient id="headboard" x2="0" y2="1"><stop stop-color="#c2aa8b"/><stop offset="1" stop-color="#a88b69"/></linearGradient>
+                <linearGradient id="duvet" x1=".15" y1="0" x2=".7" y2="1"><stop stop-color="#e4e4d9"/><stop offset=".4" stop-color="#f7f4e8"/><stop offset="1" stop-color="#bfbfb1"/></linearGradient>
+                <linearGradient id="throw" x2="0" y2="1"><stop stop-color="#8b9b7f"/><stop offset="1" stop-color="#5d715c"/></linearGradient>
+                <linearGradient id="pillow" x2=".3" y2="1"><stop stop-color="#fffbed"/><stop offset=".8" stop-color="#ded8c8"/><stop offset="1" stop-color="#b7ad99"/></linearGradient>
+                <linearGradient id="curtain" x2="1" y2="0"><stop stop-color="#bba98b"/><stop offset=".15" stop-color="#dbcbb0"/><stop offset=".3" stop-color="#aa9779"/><stop offset=".48" stop-color="#dfceb2"/><stop offset=".65" stop-color="#b5a285"/><stop offset=".8" stop-color="#dfd0b8"/><stop offset="1" stop-color="#b09b7d"/></linearGradient>
+                <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#a6c7cd"/><stop offset=".65" stop-color="#dce5d3"/><stop offset="1" stop-color="#a5b493"/></linearGradient>
+                <linearGradient id="ac-body" x2="0" y2="1"><stop stop-color="#fffdf5"/><stop offset=".65" stop-color="#e9e7df"/><stop offset="1" stop-color="#b7b7af"/></linearGradient>
+                <radialGradient id="warm-glow"><stop stop-color="#ffe4a0" stop-opacity=".7"/><stop offset="1" stop-color="#ffe1a2" stop-opacity="0"/></radialGradient>
+                <linearGradient id="daylight" x2=".1" y2="1"><stop stop-color="#fff9d6" stop-opacity=".6"/><stop offset="1" stop-color="#fff9d6" stop-opacity="0"/></linearGradient>
+                <pattern id="slats" width="22" height="20" patternUnits="userSpaceOnUse"><rect width="22" height="20" fill="#b2926b"/><rect width="13" height="20" fill="url(#wood)"/><rect x="16" width="3" height="20" fill="#755a40" opacity=".55"/></pattern>
+                <pattern id="fabric" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 1h5M1 0v5" stroke="#fff" stroke-opacity=".1" stroke-width=".7"/></pattern>
+                <filter id="soft-shadow" x="-30%" y="-40%" width="170%" height="190%"><feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#493d2e" flood-opacity=".22"/></filter>
+                <filter id="small-shadow" x="-30%" y="-30%" width="170%" height="180%"><feDropShadow dx="2" dy="6" stdDeviation="5" flood-color="#493d2e" flood-opacity=".2"/></filter>
+                <filter id="blur"><feGaussianBlur stdDeviation="15"/></filter>
+                <clipPath id="window-clip"><rect x="830" y="165" width="275" height="345" rx="2"/></clipPath>
+              </defs>
+              <!-- Architectural shell and parquet floor -->
+              <path d="M0 0h1200v605L0 645Z" fill="url(#wall)"/>
+              <path d="M0 0h170v560L0 667Z" fill="url(#side-wall)"/>
+              <path d="M0 667 170 560l1030 45v215H0Z" fill="url(#floor)"/>
+              <path d="m0 667 170-107 1030 45" fill="none" stroke="#94826a" stroke-width="11"/>
+              <g fill="none" stroke="#9f8366" stroke-opacity=".28" stroke-width="2"><path d="m170 566-90 254m220-248-15 248m160-242 50 242m95-235 105 235m50-228 160 228m0-221 205 221M0 717l1200-61M0 784l1200-56M83 679l1117-48"/><path d="m225 668-4 72m148-112 2 40m266 65 13 80m174-183 34 67m235-28 54 60"/></g>
+              <path d="M170 0v557" stroke="#f5eedf" stroke-width="3" opacity=".6"/>
+              <!-- Timber panel and framed botanical artwork -->
+              <rect x="262" y="98" width="465" height="483" rx="3" fill="url(#slats)"/>
+              <path d="M267 98h456" stroke="#c9ab82" stroke-width="5"/>
+              <g filter="url(#small-shadow)"><rect x="548" y="190" width="117" height="148" fill="#635b4b"/><rect x="555" y="197" width="103" height="134" fill="#f0eadb"/><path d="M570 306c25-32 12-50 43-82m-17 47c-30-3-21-26-21-26 26 1 27 20 21 26m12-17c-4-27 21-28 21-28 7 22-10 28-21 28m-22 35c29-3 31-24 31-24-24-4-30 14-31 24" fill="#869174" stroke="#6e7b60" stroke-width="2"/></g>
+              <!-- Daylight window with Himalayan foothills -->
+              <rect x="812" y="150" width="311" height="381" fill="#b4a38c" filter="url(#small-shadow)"/>
+              <g clip-path="url(#window-clip)"><rect x="830" y="165" width="275" height="345" fill="url(#sky)"/><circle cx="1045" cy="224" r="28" fill="#f5edc8" opacity=".8"/><path d="m819 385 89-113 85 92 73-100 67 121v139H819Z" fill="#9baf9e"/><path d="m825 422 72-92 77 94 51-65 100 80v85H825Z" fill="#788e7c"/><path d="m820 478 88-68 82 70 91-56 55 61v42H820Z" fill="#5b7968"/><g fill="#436151"><path d="m860 475 16-55 16 55h-10v34h-12v-34m143-10 13-45 14 45h-8v44h-12v-44m63 15 18-65 20 65h-12v31h-15v-31"/></g></g>
+              <path d="M830 165h275v345H830Zm137 0v345m-137-162h275" fill="none" stroke="#5a6059" stroke-width="8"/>
+              <rect x="805" y="517" width="326" height="13" rx="3" fill="#e4d8bf"/>
+              <path class="daylight" d="m834 346 271 5 95 402-550-35Z" fill="url(#daylight)"/>
+              <!-- Curtains have independent panels, anchored at the outside edges -->
+              <path d="M789 141h356" stroke="#635a49" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="785" cy="141" r="7" fill="#8f7857"/><circle cx="1149" cy="141" r="7" fill="#8f7857"/>
+              <g class="curtain-panel curtain-left"><path d="M799 147h169v416q-83 16-169 0Z" fill="url(#curtain)" filter="url(#small-shadow)"/><path d="M804 157h160M803 552q80 8 160 0" fill="none" stroke="#c4b190" stroke-width="3"/><path d="M817 148v405m31-405v411m34-411v414m35-414v413m31-413v408" stroke="#a48e6e" stroke-width="2" opacity=".4"/></g>
+              <g class="curtain-panel curtain-right"><path d="M968 147h169v416q-83 16-169 0Z" fill="url(#curtain)" filter="url(#small-shadow)"/><path d="M972 157h160m-160 395q80 8 160 0" fill="none" stroke="#c4b190" stroke-width="3"/><path d="M986 148v408m31-408v413m34-413v414m35-414v411m31-411v408" stroke="#a48e6e" stroke-width="2" opacity=".4"/></g>
+              <!-- Wool rug, bed frame and upholstered headboard -->
+              <path d="m254 563 497 17 183 179-696 7-81-75Z" fill="#86765d" opacity=".12" filter="url(#blur)"/>
+              <path d="m257 589 457 15 185 142-701 8Z" fill="#ddd4bd"/><path d="m267 599 444 15 162 121-651 8Z" fill="none" stroke="#c0b49a" stroke-width="3"/>
+              <path d="m290 613 409 12 118 96-550 9Z" fill="url(#fabric)"/>
+              <g filter="url(#soft-shadow)"><path d="M327 348q0-27 28-27h331q28 0 28 27v230H327Z" fill="url(#headboard)"/><path d="M344 350q0-13 14-13h325q14 0 14 13v189H344Z" fill="none" stroke="#d7c1a1" stroke-opacity=".5" stroke-width="2"/><path d="M412 338v190m71-190v190m71-190v190m71-190v190" stroke="#8d7357" stroke-opacity=".25" stroke-width="2"/>
+              <path d="m332 499 369 6 116 173-503 3Z" fill="#6a5540"/><path d="M314 673h504v30q-252 28-504 5Z" fill="#a38a68"/><path d="M329 703v24h17l6-23m426-1 7 25h18v-29" fill="#6a5944"/>
+              <path d="m342 464 347 3 116 182q-245 29-483 9Z" fill="#e6ded0"/><path d="m323 642 481 4v38q-235 29-482 7Z" fill="#d2c9b6"/>
+              <!-- Layered pillows -->
+              <path d="m363 389 136 1 17 87-166-1Z" fill="url(#pillow)" filter="url(#small-shadow)"/><path d="m530 391 134 2 31 84-161 1Z" fill="url(#pillow)" filter="url(#small-shadow)"/>
+              <path d="m372 399 116 2 13 63-139 2Z" fill="none" stroke="#fffdf1" stroke-width="2"/><path d="m541 401 112 3 25 63-137 1Z" fill="none" stroke="#fffdf1" stroke-width="2"/>
+              <path d="m415 436 100-1 7 61-115 1Z" fill="#c1b49b" filter="url(#small-shadow)"/><path d="m536 438 89 2 22 57-108-1Z" fill="#8d9b82" filter="url(#small-shadow)"/>
+              <!-- Soft folded duvet, seams and sage throw -->
+              <path d="m345 486q156 19 351 0l100 158q17 27 8 48-249 25-482-1-10-36 5-73Z" fill="url(#duvet)"/>
+              <path d="m347 487q182 18 350 1l14 28q-207 11-369-1Z" fill="#f7f2e5"/><path d="m340 520q146 16 366-3" fill="none" stroke="#cbc8b8" stroke-width="3"/>
+              <g fill="none" stroke="#b5b7a8" stroke-opacity=".35" stroke-width="2"><path d="m382 528-18 123m78-122-7 129m73-129 8 131m62-133 26 129m45-135 47 126M342 566q180 18 386-3M330 612q230 24 430-2"/></g>
+              <path d="m328 600q226 18 438-3l26 48q13 29 7 55-52 8-103 9l-7-47q-173 15-367-4Z" fill="url(#throw)"/><path d="m330 604q231 21 433-3" fill="none" stroke="#b2bda4" stroke-width="5"/><path d="m324 646q199 23 367 10l10 46m12-55 9 57m13-59 9 56m12-58 10 55m11-55 9 53" fill="none" stroke="#a6b398" stroke-width="2" opacity=".5"/><path d="m697 706 2 14m10-15 2 14m10-15 2 14m10-16 2 14m10-15 2 14m10-15 2 13m10-15 2 13m10-15 2 13m10-15 2 12" stroke="#7b8e70" stroke-width="3"/></g>
+              <!-- Walnut bedside tables, books and a ceramic vase -->
+              <g filter="url(#small-shadow)"><path d="m204 470 101 5 14 83-111-5Z" fill="#927450"/><path d="m204 470 16-12 99 5-14 12Z" fill="#c1a17a"/><path d="m211 499 96 5m-59 8 18 1" stroke="#6f563d" stroke-width="2"/><path d="m215 550-3 31m91-25 8 28" stroke="#725d43" stroke-width="7"/><path d="m735 481 83 4 26 89-98-6Z" fill="#997b56"/><path d="m735 481 15-11 82 5-14 10Z" fill="#c9ae87"/><path d="m748 514 77 5m-45 9h17" stroke="#70583f" stroke-width="2"/><path d="m750 565 2 23m81-15 7 21" stroke="#725d43" stroke-width="7"/>
+              <path d="m750 474 42 1 7-8-43-2Z" fill="#dad6bd"/><path d="m756 464 40 1 5-8-40-1Z" fill="#7e8b72"/><path d="M782 452q-17-30-4-38h15q14 10 0 39Z" fill="#d7c9ad"/><path d="m785 416-6-39m8 39 13-47" stroke="#7e8869" stroke-width="2"/><path d="M780 394q-26-8-16-21 17 2 16 21m14-9q1-23 16-21 0 15-16 21" fill="#879174"/></g>
+              <!-- Pendant light is the controllable warm room light -->
+              <ellipse class="light-glow" cx="202" cy="365" rx="280" ry="320" fill="url(#warm-glow)"/>
+              <path d="M215 0v226" stroke="#5c5548" stroke-width="4"/><ellipse cx="215" cy="7" rx="18" ry="5" fill="#6c6657"/>
+              <path d="M185 217h60l33 66H152Z" fill="#bca57b" filter="url(#small-shadow)"/><path d="M185 217h60l33 66H152Z" fill="url(#fabric)"/>
+              <ellipse class="lamp-source" cx="215" cy="283" rx="63" ry="10" fill="#d7c8a2"/><ellipse cx="215" cy="279" rx="57" ry="6" fill="#eee1c3" opacity=".65"/>
+              <!-- Wall-mounted air conditioner, display and animated cool airflow -->
+              <g filter="url(#small-shadow)"><rect x="310" y="143" width="211" height="72" rx="12" fill="url(#ac-body)"/><path d="M312 189h207" stroke="#c6c5ba" stroke-width="2"/><path d="M321 204h187" stroke="#777f77" stroke-width="6" stroke-linecap="round"/><path d="M325 201h180" stroke="#a5aca0" stroke-width="2"/><path d="M326 157h17" stroke="#c0c1b7" stroke-width="3"/><circle class="ac-led" cx="495" cy="173" r="3" fill="#a5aba1"/><text id="ac-scene-temp" x="469" y="176" text-anchor="middle" fill="#667968" font-family="monospace" font-size="15">OFF</text></g>
+              <g class="ac-air" fill="none" stroke="#e6fbf3" stroke-width="3" stroke-linecap="round"><path d="M355 222q-8 20 0 40t0 36"/><path d="M415 222q-8 20 0 40t0 36"/><path d="M475 222q-8 20 0 40t0 36"/></g>
+              <!-- Three-blade ceiling fan; rotor rotates independently of the stem -->
+              <path d="M632 0v88" stroke="#746a58" stroke-width="6"/><ellipse cx="632" cy="7" rx="22" ry="6" fill="#8b806b"/>
+              <ellipse cx="632" cy="125" rx="145" ry="20" fill="#66543f" opacity=".07"/>
+              <g transform="translate(632 103)"><g class="fan-rotor" fill="#81684b" stroke="#6c563e" stroke-width="1"><path d="M-4-8C-38-59-112-78-128-51c-7 15 64 37 119 53Z"/><path d="M-4-8C-38-59-112-78-128-51c-7 15 64 37 119 53Z" transform="rotate(120)"/><path d="M-4-8C-38-59-112-78-128-51c-7 15 64 37 119 53Z" transform="rotate(240)"/></g><circle r="19" fill="#b4a085"/><circle r="12" fill="#8a775c"/><ellipse cy="3" rx="11" ry="8" fill="#a08a6b"/></g>
+              <!-- Tall house plant and hand-thrown floor planter -->
+              <ellipse cx="1095" cy="670" rx="54" ry="15" fill="#6d6049" opacity=".16"/>
+              <path d="M1065 605h68l-10 59q-24 13-48 0Z" fill="#b48c69"/><ellipse cx="1099" cy="605" rx="34" ry="9" fill="#796b52"/>
+              <g stroke="#526c4b" stroke-width="4" fill="none"><path d="M1097 609q14-91-27-143m27 138q-4-125 18-159m-17 152q-37-69-57-74m56 72q29-63 54-77"/></g>
+              <g fill="#5f7855"><path d="M1077 492q-57-1-50-52 46 9 50 52Z"/><path d="M1105 488q-5-53 30-69 18 49-30 69Z"/><path d="M1090 548q-49-2-53-46 48-1 53 46Z"/><path d="M1110 548q13-49 51-47-1 46-51 47Z"/><path d="M1074 576q-49 10-60-29 40-14 60 29Z"/><path d="M1110 578q15-35 46-25-10 34-46 25Z"/></g>
+              <g fill="#84936e"><path d="M1095 515q-35-40-16-64 35 27 16 64Z"/><path d="M1119 516q-1-40 30-49 14 35-30 49Z"/></g>
+              <!-- Ambient illumination layers stay independent of device geometry -->
+              <path class="room-shade" d="M0 0h1200v820H0Z" fill="#393d3b"/>
+              <path class="light-wash" d="M0 0h1200v820H0Z" fill="#ffdc9a"/>
+            </svg>
+            <div class="scene-overlay"><span class="scene-tag"><span class="small-dot"></span><span id="scene-live-status">Connecting to your room</span></span><span class="scene-signature">Made for everyday ease</span></div>
+          </div>
+          <div class="room-footer"><span><svg class="icon"><use href="#i-info"/></svg> Your devices respond here, in real time.</span><span>01 / BEDROOM</span></div>
+        </section>
+
+        <section class="controls-section" aria-labelledby="controls-title">
+          <div class="section-heading"><h2 id="controls-title">Make yourself comfortable</h2><span>Manual controls</span></div>
+          <div class="device-controls" id="device-controls" aria-busy="true">
+            <article class="device-control"><div class="device-topline"><span class="device-icon"><svg class="icon"><use href="#i-light"/></svg></span><span class="device-state" id="light-state">OFF</span></div><h3>Lighting</h3><p>Warm pendant light</p><div class="segmented" role="group" aria-label="Bedroom light"><button data-device="Light" data-intent="TurnOn" aria-pressed="false" disabled>On</button><button data-device="Light" data-intent="TurnOff" aria-pressed="true" disabled>Off</button></div></article>
+            <article class="device-control"><div class="device-topline"><span class="device-icon"><svg class="icon"><use href="#i-fan"/></svg></span><button class="power-toggle" id="fan-power" data-device="Fan" data-intent="TurnOn" aria-label="Turn on bedroom fan" aria-pressed="false" disabled><svg class="icon"><use href="#i-power"/></svg></button></div><h3>Ceiling fan <span id="fan-state" class="inline-state">OFF</span></h3><p id="fan-description">Ready when you are</p><div class="stepper" role="group" aria-label="Fan speed"><button data-device="Fan" data-intent="DecreaseSpeed" aria-label="Decrease fan speed" disabled>−</button><output id="fan-speed">Level 1</output><button data-device="Fan" data-intent="IncreaseSpeed" aria-label="Increase fan speed" disabled>+</button></div></article>
+            <article class="device-control"><div class="device-topline"><span class="device-icon"><svg class="icon"><use href="#i-ac"/></svg></span><button class="power-toggle" id="ac-power" data-device="AC" data-intent="TurnOn" aria-label="Turn on bedroom AC" aria-pressed="false" disabled><svg class="icon"><use href="#i-power"/></svg></button></div><h3>Air conditioner <span id="ac-state" class="inline-state">OFF</span></h3><p id="ac-description">Saved temperature</p><div class="stepper" role="group" aria-label="AC temperature"><button data-device="AC" data-intent="DecreaseTemp" aria-label="Decrease AC temperature" disabled>−</button><label class="temperature-input"><input id="ac-temperature" type="number" min="16" max="30" value="24" aria-label="Set exact AC temperature in degrees Celsius" disabled><span>°C</span></label><button data-device="AC" data-intent="IncreaseTemp" aria-label="Increase AC temperature" disabled>+</button></div></article>
+            <article class="device-control"><div class="device-topline"><span class="device-icon"><svg class="icon"><use href="#i-curtain"/></svg></span><span class="device-state" id="curtain-state">CLOSED</span></div><h3>Curtains</h3><p id="curtain-description">A little privacy</p><div class="segmented" role="group" aria-label="Bedroom curtains"><button data-device="Curtain" data-intent="Open" aria-pressed="false" disabled>Open</button><button data-device="Curtain" data-intent="Close" aria-pressed="true" disabled>Close</button></div></article>
+          </div>
+        </section>
+      </div>
+
+      <aside class="assistant-panel" aria-labelledby="assistant-title">
+        <div class="assistant-heading"><span class="eyebrow">HERE TO HELP</span><span class="assistant-orbit" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <h2 id="assistant-title">Just say the word.</h2><p class="assistant-intro">Your room, a little closer. <br>Speak naturally. We’ll take it from there.</p>
+        <div id="model-notice" class="model-notice" hidden><svg class="icon"><use href="#i-info"/></svg><p id="model-notice-text"></p></div>
+        <div class="voice-area" id="voice-area" data-state="idle">
+          <div class="mic-orbit"><button id="microphone" class="mic-button" aria-label="Start listening for a voice command" disabled><svg class="icon"><use href="#i-mic"/></svg></button><span class="mic-ring ring-one"></span><span class="mic-ring ring-two"></span></div>
+          <div class="waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <strong class="voice-label" id="voice-label">Tap to speak</strong><span class="voice-hint" id="voice-hint">Checking speech availability…</span>
+        </div>
+        <div class="examples"><span>TRY SOMETHING LIKE</span><p>“Fan on bay nang.”</p><p>“Set the AC to 24 degrees.”</p></div>
+        <form id="command-form" class="command-form"><label for="command-input"><svg class="icon"><use href="#i-keyboard"/></svg> Prefer to type?</label><div class="text-command"><input id="command-input" type="text" placeholder="Type a bedroom command…" autocomplete="off" maxlength="500" required disabled><button id="send-command" type="submit" aria-label="Send typed command" disabled><svg class="icon"><use href="#i-arrow"/></svg></button></div></form>
+        <div class="understanding" aria-label="Command understanding">
+          <div class="result-step"><span class="step-number">1</span><div><h3 id="transcript-heading">Recognized speech / typed text</h3><p id="transcript" class="empty-result">Your words will appear here.</p></div></div>
+          <div class="result-step"><span class="step-number">2</span><div><h3>Model prediction</h3><div class="prediction-chips" id="prediction"><span class="empty-result">Waiting for a command</span></div></div></div>
+          <div class="result-step"><span class="step-number" id="execution-marker">3</span><div><h3>Device execution</h3><p id="execution-result" class="empty-result">Your room is ready.</p></div></div>
+        </div>
+        <div class="speech-note"><span class="small-dot"></span><span id="speech-engine">Voice availability depends on your browser.</span></div>
+      </aside>
+    </div>
+
+    <section class="history-section" aria-labelledby="history-title"><div class="section-heading"><div><svg class="icon"><use href="#i-clock"/></svg><h2 id="history-title">A little history</h2><span id="history-count">0 recent commands</span></div><span>Latest first · this session</span></div><div id="history-list" class="history-list"><div class="history-empty"><span class="empty-history-icon"><svg class="icon"><use href="#i-clock"/></svg></span><div><strong>Every little adjustment, right here.</strong><p>Your recent commands and their results will appear in this space.</p></div></div></div></section>
+    <footer class="page-footer"><span><span class="brand-mini" aria-hidden="true">⌂</span> Designed for comfort. Built for independence.</span><span>Virtual bedroom · University NLP project</span></footer>
+    <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></div>
+  </main>
+</body>
+</html>
+

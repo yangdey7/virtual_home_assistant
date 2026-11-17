@@ -1,0 +1,13 @@
+{
+  "factory": "your_existing_inference_module:load_predictor",
+  "artifact_dir": "models/your-original-trained-model",
+  "confidence_threshold": 0.8,
+  "output_fields": {
+    "intent": "intent",
+    "device": "device",
+    "value": "value",
+    "confidence": "confidence"
+  },
+  "intent_labels": {},
+  "device_labels": {}
+}

@@ -1,0 +1,12 @@
+{
+  "name": "bhutanese-virtual-bedroom",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:browser": "playwright test",
+    "check": "node --check frontend/js/app.js && node --check frontend/js/voice.js && node --check frontend/js/bedroom.js && node --check frontend/js/api.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}
