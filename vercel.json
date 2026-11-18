@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "python -c \"from shutil import copytree, ignore_patterns; copytree('frontend', 'public/static', dirs_exist_ok=True, ignore=ignore_patterns('index.html'))\""
+}
