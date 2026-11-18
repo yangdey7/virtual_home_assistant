@@ -141,6 +141,14 @@ def create_app(config=None, *, model_service=None, speech_service=None):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    app = create_app()
+    model_dir = ROOT / "models"
+    whisper_dir = model_dir / "whisper_finetuned_codemix" / "final_model_whisper"
+    model_config = os.environ.get("MODEL_CONFIG")
+    if model_config is None and (model_dir / "intent_model/checkpoint-260/model.safetensors").is_file():
+        model_config = ROOT / "model_config.codemix.json"
+    whisper_model = os.environ.get("WHISPER_MODEL")
+    if whisper_model is None and (whisper_dir / "model.safetensors").is_file():
+        whisper_model = whisper_dir
+    app = create_app({"MODEL_CONFIG": model_config, "WHISPER_MODEL": whisper_model})
     app.run(host="127.0.0.1", port=int(os.environ.get("PORT", 5000)), debug=False, threaded=True, use_reloader=False)
 

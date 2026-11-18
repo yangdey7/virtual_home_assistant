@@ -1,0 +1,4 @@
+-r requirements.txt
+torch>=2.6,<3
+transformers==5.18.0
+av>=14,<20

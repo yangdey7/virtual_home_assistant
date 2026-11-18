@@ -5,7 +5,7 @@ Developing as a part of NLP project.
 
 A local, assistive smart-bedroom simulation with a photorealistic bedroom, animated devices, accessible manual controls, speech input, and a Python command controller. No physical IoT hardware, paid API, frontend build, or cloud deployment is required.
 
-**Model integration status:** the initial checkout contained only the two-line README above. No model weights, tokenizer, model architecture, label metadata, inference script, dataset, speech implementation, or dependency file was present. You indicated that you will add the trained model later. The interface and controller work now; **real voice/text device control is unavailable until your original model is connected**. The application never substitutes keyword rules or a fake classifier. No original model or project data was altered or retrained.
+The app can use the supplied XLM-R intent and device classifiers for commands and fine-tuned Whisper for speech. Manual controls also work in a checkout without model files.
 
 ## Run locally
 
@@ -44,33 +44,28 @@ The application binds to the local computer only. An optional `PORT` environment
 
 Initial state: light OFF, fan OFF at level 1, AC OFF at 24°C, curtains CLOSED. `AC_MIN_TEMP` and `AC_MAX_TEMP` configure the temperature bounds before startup; they must contain the initial 24°C setting and stay within 10–40°C. The controller validates every intent, device, compatibility, required value, limit, and relevant current state before applying a command. Rejected commands never partially change the room.
 
-## Connect your original trained NLP model later
+## Run the supplied models
 
-The model architecture and actual output format are **unknown until you supply the original files**. The integration boundary deliberately makes no assumptions about Transformers, PyTorch, TensorFlow, tokenization, or whether intent/entities use separate heads or separate models.
+Extract the inference files from the archives into these directories, preserving the checkpoints' folder names. The app needs `model.safetensors`, `config.json`, and the tokenizer and processor JSON files where provided.
 
-Please add or identify:
+- `models/best_device_model/`
+- `models/intent_model/checkpoint-260/`
+- `models/whisper_finetuned_codemix/final_model_whisper/`
 
-1. Original model weights and architecture/configuration, or the complete saved model directory.
-2. The exact tokenizer/vocabulary and text preprocessing code used during training.
-3. The working inference script and its dependencies/versions.
-4. Original intent/device label mappings, including label IDs and entity/BIO tags if used.
-5. A real inference input/output example, including confidence/logits and temperature/value extraction.
+From the project directory, using the virtual environment from the local setup above:
 
-Keep large artifacts in their current location if preferred; absolute external paths are supported. The `models/` directory and your private `model_config.json` are ignored by Git to prevent accidentally committing large weights or local paths. No files are automatically moved or downloaded.
-
-### Provider contract
-
-Once the original inference code is available, write a small wrapper **around that code**. Its factory receives the configured artifact directory as a `pathlib.Path`, loads the original model and tokenizer once, and returns an object with `predict(text)`:
-
-```python
-# Example CONTRACT only — implement using your original inference module.
-def load_predictor(artifact_dir):
-    # Load original weights/tokenizer and initialize original inference here.
-    # Return the original predictor or a thin wrapper exposing predict(text).
-    ...
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-models.txt
+.\.venv\Scripts\python.exe -m backend.app
 ```
 
-The returned prediction must be a plain Python dictionary. It can retain original label IDs or names; explicit mappings in the configuration normalize them. For nested tensors, logits, token tags, or multiple model heads, the wrapper must use the original decoding logic and return JSON-compatible Python values. **Never infer the intent/device with fallback keyword rules.**
+The launcher detects the supplied checkpoint paths and uses `model_config.codemix.json` for the classifiers. `MODEL_CONFIG` and `WHISPER_MODEL` override these defaults. The downloads are Python dependencies. Inference loads weights from disk, and Git ignores the `models/` directory. Check `/api/health` for `model.ready` and `speech.ready`.
+
+The intent checkpoint uses the device export's XLM-R tokenizer when its own tokenizer is absent. Both exports use generic numeric labels. The adapter maps those IDs using predictions on the labeled evaluation transcripts bundled with Whisper. The command score is the lower of the two classifier softmax scores. The default 0.8 threshold rejected many fan speed, relative AC temperature, and curtain commands on those transcripts. `SetTemp` accepts a single whole-number temperature in digits or English number words, and the controller validates its range.
+
+### Configure another NLP provider
+
+The configured factory receives the artifact directory as a `pathlib.Path` and returns an object with a `predict(text)` method. Predictions are plain Python dictionaries with JSON-compatible values. Configuration can map original output names and label IDs.
 
 The normalized contract is:
 
@@ -83,7 +78,7 @@ The normalized contract is:
 }
 ```
 
-`value` is null for actions other than `SetTemp`. The wrapper must obtain the numeric temperature from the actual original model/entity pipeline. `confidence` must come from real model outputs, be finite, and be between 0 and 1. It must cover the complete command, including intent, device, and any required value. If heads are separate, use a justified aggregation (for example, the minimum of their relevant confidence scores). A model without a trustworthy confidence measure needs an explicit confidence policy implemented and evaluated against the original outputs; this application rejects missing confidence rather than treating it as certainty. The threshold is configurable and defaults to 0.8; it has not been calibrated against your absent model.
+`value` is null for actions other than `SetTemp`. Supply the numeric temperature for `SetTemp`. `confidence` comes from the model outputs and must be finite and between 0 and 1. The threshold is configurable and defaults to 0.8.
 
 ### Configuration
 
@@ -108,7 +103,7 @@ The application creates exactly one `ModelService` on startup; its factory is ca
 
 ## Speech input
 
-No Whisper implementation or weights were present in the supplied workspace.
+The supplied fine-tuned Whisper export uses the saved processor and generation settings. The app decodes audio at the saved sampling rate and lets Whisper detect the language for code-mixed transcription. [Hugging Face Whisper documentation](https://huggingface.co/docs/transformers/v5.19.0/model_doc/whisper)
 
 By default, supported browsers can use `SpeechRecognition`/`webkitSpeechRecognition` with English (`en-US`) as a practical fallback. This is **browser speech recognition, not Whisper**; some browsers send audio to their own online recognition service. The interface labels the engine. Unsupported browsers offer typed and manual input. Use localhost/127.0.0.1 and allow microphone permission. See [MDN's SpeechRecognition documentation](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition).
 
@@ -120,11 +115,11 @@ $env:WHISPER_MODEL = 'D:\path\to\your\local\faster-whisper-model'
 .\.venv\Scripts\python.exe -m backend.app
 ```
 
-This optional implementation follows the [faster-whisper local model interface](https://github.com/SYSTRAN/faster-whisper). It loads once on CPU with int8 computation and `local_files_only=True`; the app does not automatically download model weights. OpenAI Whisper `.pt` files and Hugging Face Transformer directories are not interchangeable with this CTranslate2 format. If your eventual project includes another working Whisper implementation, adapt `SpeechService` to reuse it instead of duplicating it.
+The CTranslate2 implementation loads once on CPU with int8 computation and `local_files_only=True`. [faster-whisper local model interface](https://github.com/SYSTRAN/faster-whisper)
 
 With local Whisper ready, the microphone records using `MediaRecorder`. Tap once to start and again to finish; recording also stops after 15 seconds. Audio is uploaded to `/api/transcribe`, decoded in memory, and is not saved by the application. Requests are limited to 8 MB. The recognized text then uses exactly the same NLP path as typed text. Microphone tracks are released after recording and on page exit.
 
-English and Bhutanese code-mixed recognition depend on the selected speech engine, pronunciation, and actual NLP training data. **Full Dzongkha speech support is not claimed.** Real microphone/audio quality and model accuracy need testing on your machine with your recordings after adding the actual model(s).
+English and Bhutanese code-mixed recognition depend on the selected speech engine and the recording.
 
 ## Architecture and API
 
@@ -142,7 +137,8 @@ Manual controls ─────────────────────�
 | `backend/app.py` | Flask app factory, local static serving, REST routes, one-time services, error responses. |
 | `backend/device_manager.py` | Shared state, validation, atomic commands, bounded history under an `RLock`. |
 | `backend/model_inference.py` | Configured original-provider loading, output mapping, confidence validation. |
-| `backend/speech_recognition.py` | Optional local pretrained Whisper lifecycle and transcription. |
+| `backend/codemix_inference.py` | Supplied XLM-R checkpoints, label mapping, and temperature extraction. |
+| `backend/speech_recognition.py` | Local Whisper loading and transcription. |
 | `frontend/index.html` | Accessible layout, photographic room plates, perspective fan, moving curtain masks and live AC display. |
 | `frontend/assets/bedroom/` | Local photographic daylight, warm-light and curtain plates with generation provenance. |
 | `frontend/css/style.css` | Responsive warm/sage styling, room states, motion and focus behavior. |

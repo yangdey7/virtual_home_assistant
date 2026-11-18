@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase, mock
 
 from backend.app import create_app
+from backend.codemix_inference import temperature_value
 from backend.model_inference import ModelService
 
 
@@ -137,6 +138,18 @@ class ApiTests(TestCase):
 
 
 class LoadingAndAdapterTests(TestCase):
+    def test_codemix_temperature_requires_a_single_whole_value(self):
+        for text, value in (
+            ("AC temperature 26 lu zo nang", 26),
+            ("Set the AC to twenty-two degrees", 22),
+            ("Set the AC to 24.5 degrees", None),
+            ("Set the AC to either 22 or 23 degrees", None),
+            ("Set the AC to minus 24", None),
+            ("Set the AC temperature", None),
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(temperature_value(text), value)
+
     def test_factory_loads_once_and_maps_original_labels(self):
         predictor = FixturePredictor({"action_id": 2, "entity": "ceiling_fan", "numeric": None, "score": .96})
         with TemporaryDirectory() as directory:

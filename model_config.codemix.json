@@ -1,0 +1,5 @@
+{
+  "factory": "backend.codemix_inference:load_predictor",
+  "artifact_dir": "models",
+  "confidence_threshold": 0.8
+}

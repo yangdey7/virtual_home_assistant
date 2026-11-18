@@ -1,9 +1,4 @@
-"""Explicit adapter boundary for the user's original, as-yet absent model.
-
-No architecture, tokenizer, entity extraction, or predictions are invented here.
-The configured factory must wrap the original inference code and return an object
-with predict(text). All artifacts are loaded by that factory exactly once.
-"""
+"""Load the configured model provider and validate its command predictions."""
 
 import importlib
 import json
