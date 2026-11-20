@@ -5,7 +5,7 @@ Developing as a part of NLP project.
 
 A local, assistive smart-bedroom simulation with a photorealistic bedroom, animated devices, accessible manual controls, speech input, and a Python command controller. No physical IoT hardware, paid API, frontend build, or cloud deployment is required.
 
-The app can use the supplied XLM-R intent and device classifiers for commands and fine-tuned Whisper for speech. Manual controls also work in a checkout without model files.
+The app supports a local DistilBERT trial, the supplied XLM-RoBERTa intent and device classifiers, and fine-tuned Whisper for speech. Manual controls also work in a checkout without model files.
 
 ## Run locally
 
@@ -46,11 +46,15 @@ Initial state: light OFF, fan OFF at level 1, AC OFF at 24°C, curtains CLOSED. 
 
 ## Run the supplied models
 
-Extract the inference files from the archives into these directories, preserving the checkpoints' folder names. The app needs `model.safetensors`, `config.json`, and the tokenizer and processor JSON files where provided.
+Place the inference files in these directories. Each trained export needs `model.safetensors`, `config.json`, and the tokenizer and processor JSON files where provided.
 
+- `models/distilbert_intent_model/`
+- `models/distilbert_multitask_model/`
 - `models/best_device_model/`
 - `models/intent_model/checkpoint-260/`
 - `models/whisper_finetuned_codemix/final_model_whisper/`
+
+The supplied DistilBERT ZIP includes `config.json`, `tokenizer.json`, `tokenizer_config.json`, and `device_config.json` under `distilbert_output/distilbert_intent_model/`, along with the data splits under `distilbert_output/splits/`. Place the trained or retrained `model.safetensors` beside the four configuration and tokenizer files.
 
 From the project directory, using the virtual environment from the local setup above:
 
@@ -59,9 +63,24 @@ From the project directory, using the virtual environment from the local setup a
 .\.venv\Scripts\python.exe -m backend.app
 ```
 
-The launcher detects the supplied checkpoint paths and uses `model_config.codemix.json` for the classifiers. `MODEL_CONFIG` and `WHISPER_MODEL` override these defaults. The downloads are Python dependencies. Inference loads weights from disk, and Git ignores the `models/` directory. Check `/api/health` for `model.ready` and `speech.ready`.
+The local launcher prefers multitask DistilBERT when its four export files are present. It can also select intent-only DistilBERT and XLM-RoBERTa, in that order. `MODEL_CONFIG` and `WHISPER_MODEL` override automatic selection. Inference loads weights from disk, and Git ignores the `models/` directory. Check `/api/health` for `model.name`, `model.ready`, and `speech.ready`.
 
-The intent checkpoint uses the device export's XLM-R tokenizer when its own tokenizer is absent. Both exports use generic numeric labels. The adapter maps those IDs using predictions on the labeled evaluation transcripts bundled with Whisper. The command score is the lower of the two classifier softmax scores. The default 0.8 threshold rejected many fan speed, relative AC temperature, and curtain commands on those transcripts. `SetTemp` accepts a single whole-number temperature in digits or English number words, and the controller validates its range.
+To switch classifiers for a trial, stop the server, set `MODEL_CONFIG` to the desired file, and restart it in the same PowerShell session.
+
+```powershell
+$env:MODEL_CONFIG = 'model_config.codemix.json'   # XLM-RoBERTa
+# $env:MODEL_CONFIG = 'model_config.distilbert.json'  # DistilBERT with device keywords
+# $env:MODEL_CONFIG = 'model_config.distilbert_multitask.json'  # DistilBERT with two trained heads
+.\.venv\Scripts\python.exe -m backend.app
+```
+
+Set `$env:MODEL_CONFIG = $null` to restore automatic selection on the next restart.
+
+Intent-only DistilBERT uses its saved cased tokenizer, 64-token limit, and intent labels. It requires a whole-word or phrase match for exactly one device using the notebook's keyword list. Its confidence score is the intent softmax score. All three configurations apply a 0.8 confidence threshold and use the same temperature extraction and controller.
+
+Train the two-head model by opening `distilbert_multitask_colab.ipynb` in Colab, selecting a GPU, and uploading `dataset.xlsx` when prompted. The notebook evaluates intent, device, and joint accuracy and saves its export under `My Drive/distilbert_multitask_runs/`. Copy `model.safetensors`, `config.json`, `tokenizer.json`, and `tokenizer_config.json` to `models/distilbert_multitask_model/` and restart the app. Both heads run from one encoder pass. The app compares the lower head score against the confidence threshold. For comparisons, use the same held-out commands and track correct predictions that pass that threshold.
+
+The XLM-RoBERTa intent checkpoint uses the device export's tokenizer when its own tokenizer is absent. Both XLM-RoBERTa exports use generic numeric labels. The adapter maps those IDs using predictions on the labeled evaluation transcripts bundled with Whisper. The command score is the lower of the two classifier softmax scores. The default 0.8 threshold rejected many fan speed, relative AC temperature, and curtain commands on those transcripts. `SetTemp` accepts a single whole-number temperature in digits or English number words, and the controller validates its range.
 
 ### Configure another NLP provider
 
@@ -138,6 +157,7 @@ Manual controls ─────────────────────�
 | `backend/device_manager.py` | Shared state, validation, atomic commands, bounded history under an `RLock`. |
 | `backend/model_inference.py` | Configured original-provider loading, output mapping, confidence validation. |
 | `backend/codemix_inference.py` | Supplied XLM-R checkpoints, label mapping, and temperature extraction. |
+| `backend/distilbert_inference.py` | DistilBERT intent checkpoint and device keyword matching. |
 | `backend/speech_recognition.py` | Local Whisper loading and transcription. |
 | `frontend/index.html` | Accessible layout, photographic room plates, perspective fan, moving curtain masks and live AC display. |
 | `frontend/assets/bedroom/` | Local photographic daylight, warm-light and curtain plates with generation provenance. |
@@ -153,11 +173,11 @@ Manual controls ─────────────────────�
 | `GET /api/health` | Backend, original model and local Whisper availability. |
 | `GET /api/state` | Devices, monotonic revision, history and configurable limits. |
 | `POST /api/control` | Manual `{intent, device, value}` through the shared controller. |
-| `POST /api/interpret` | `{text, source: "voice" or "text"}` → real prediction and a pending command ID. No device changes occur here. |
+| `POST /api/interpret` | `{text, source: "voice" or "text"}` → model prediction, pending command ID, and `requires_confirmation`. |
 | `POST /api/execute` | `{command_id}` → validate and execute the server-stored prediction once. IDs expire after 60 seconds. |
 | `POST /api/transcribe` | Multipart `audio` → transcript from configured local Whisper. |
 
-The split between interpretation and execution lets the interface display the real prediction before applying it. The frontend cannot silently substitute a different inferred command at execution time. All manual actions call the same controller. API errors contain understandable messages; available snapshots keep the UI synchronized. The frontend ignores older state revisions. No CORS is enabled; mutating requests from a different browser origin are rejected.
+For a typed or spoken command, the interface applies the prediction directly when the text explicitly names one supported device and the predicted device matches it. The check accepts English names and aliases from the code-mixed dataset, including `pangka` and `pardha`. A missing device name, multiple different devices, or a predicted device that differs from the mention opens a confirmation dialog. The dialog shows the proposed action and the command text. Cancel or Escape closes it without applying the action. The model confidence threshold and controller validation apply to every inferred command. All manual actions call the same controller immediately. API errors contain understandable messages; available snapshots keep the UI synchronized. The frontend ignores older state revisions. No CORS is enabled; mutating requests from a different browser origin are rejected.
 
 ## Tests
 

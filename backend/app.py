@@ -4,6 +4,7 @@ import logging
 import os
 import secrets
 from pathlib import Path
+from stat import S_ISREG
 from threading import Lock
 from time import monotonic
 
@@ -11,11 +12,34 @@ from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException
 
 from .device_manager import DeviceManager
+from .device_mentions import has_clear_device_mention
 from .errors import CommandError
 from .model_inference import ModelService
 from .speech_recognition import SpeechService
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def local_model_config():
+    model_dir = ROOT / "models"
+    exports = (
+        ("distilbert_multitask", model_dir / "distilbert_multitask_model",
+         ("model.safetensors", "config.json", "tokenizer.json", "tokenizer_config.json")),
+        ("distilbert", model_dir / "distilbert_intent_model", ("model.safetensors",)),
+        ("codemix", model_dir / "intent_model" / "checkpoint-260", ("model.safetensors",)),
+    )
+    for name, directory, required_files in exports:
+        config_path = ROOT / f"model_config.{name}.json"
+        try:
+            if all(S_ISREG((directory / filename).stat().st_mode) for filename in required_files):
+                return config_path
+        except (FileNotFoundError, NotADirectoryError):
+            continue
+        except OSError as error:
+            logging.getLogger(__name__).warning("Unable to inspect the local model export: %s", error)
+            # Let ModelService surface the load failure and keep manual controls available.
+            return config_path
+    return None
 
 
 def create_app(config=None, *, model_service=None, speech_service=None):
@@ -98,7 +122,12 @@ def create_app(config=None, *, model_service=None, speech_service=None):
             if len(pending) >= 100:
                 raise CommandError("Too many commands are waiting. Please try again shortly.", "busy", 429)
             pending[token] = {"command": prediction, "text": text, "source": source, "expires": now + 60}
-        return jsonify({"transcript": text, "prediction": prediction, "command_id": token})
+        return jsonify({
+            "transcript": text,
+            "prediction": prediction,
+            "command_id": token,
+            "requires_confirmation": not has_clear_device_mention(text, prediction["device"]),
+        })
 
     @app.post("/api/execute")
     def execute():
@@ -141,11 +170,10 @@ def create_app(config=None, *, model_service=None, speech_service=None):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    model_dir = ROOT / "models"
-    whisper_dir = model_dir / "whisper_finetuned_codemix" / "final_model_whisper"
+    whisper_dir = ROOT / "models" / "whisper_finetuned_codemix" / "final_model_whisper"
     model_config = os.environ.get("MODEL_CONFIG")
-    if model_config is None and (model_dir / "intent_model/checkpoint-260/model.safetensors").is_file():
-        model_config = ROOT / "model_config.codemix.json"
+    if model_config is None:
+        model_config = local_model_config()
     whisper_model = os.environ.get("WHISPER_MODEL")
     if whisper_model is None and (whisper_dir / "model.safetensors").is_file():
         whisper_model = whisper_dir

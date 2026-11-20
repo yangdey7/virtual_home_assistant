@@ -158,7 +158,7 @@ h2, h3, p { margin-top: 0; }
 [data-state="listening"] .mic-ring { animation: mic-pulse 1.7s ease-out infinite; }
 [data-state="listening"] .ring-two { animation-delay: .45s; }
 @keyframes mic-pulse { 0% { transform: scale(.8); opacity: 1; } 100% { transform: scale(1.35); opacity: 0; } }
-[data-state="processing"] .mic-button, [data-state="understanding"] .mic-button, [data-state="executing"] .mic-button { background: #858f72; }
+[data-state="processing"] .mic-button, [data-state="confirming"] .mic-button, [data-state="executing"] .mic-button { background: #858f72; }
 [data-state="processing"] .ring-one, [data-state="executing"] .ring-one { border: 2px solid #e1e4d7; border-top-color: var(--green); animation: fan-spin 1s linear infinite; }
 .waveform { display: flex; align-items: center; gap: 4px; height: 27px; margin: 7px 0 8px; }
 .waveform i { width: 3px; height: 5px; border-radius: 4px; background: #9bab89; }
@@ -194,6 +194,15 @@ h2, h3, p { margin-top: 0; }
 .result-step p, .empty-result { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
 .result-step p:not(.empty-result) { color: #4c5b48; }
 .result-step p.error { color: var(--error); }
+.confirmation-dialog { width: min(400px, calc(100% - 32px)); max-height: calc(100% - 32px); padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); color: var(--ink); box-shadow: 0 20px 55px #22312740; }
+.confirmation-dialog::backdrop { background: #29382f70; }
+.confirmation-dialog h2 { margin: 0; font-size: 22px; line-height: 1.3; }
+.confirmation-dialog p { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.confirmation-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.confirmation-actions button { min-width: 88px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--green-pale); color: var(--green-dark); font-size: 14px; font-weight: 600; }
+.confirmation-actions button:hover:not(:disabled) { background: #dce4d2; }
+#confirm-command { border-color: var(--green); background: var(--green); color: var(--white); }
+#confirm-command:hover:not(:disabled) { background: var(--green-dark); }
 .prediction-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .prediction-chip { font-size: 9px; border: 1px solid #dde4d2; background: #f2f5ec; color: var(--green-dark); padding: 4px 6px; border-radius: 4px; overflow-wrap: anywhere; }
 .speech-note { display: flex; align-items: flex-start; gap: 6px; font-size: 9px; line-height: 1.5; color: #868a7c; padding-top: 5px; }

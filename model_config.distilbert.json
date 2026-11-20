@@ -1,0 +1,6 @@
+{
+  "name": "DistilBERT (intent) + device keywords",
+  "factory": "backend.distilbert_inference:load_predictor",
+  "artifact_dir": "models/distilbert_intent_model",
+  "confidence_threshold": 0.8
+}

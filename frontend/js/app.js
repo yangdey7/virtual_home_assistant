@@ -3,12 +3,13 @@ import { renderBedroom, renderPrediction, setControlsAvailable } from './bedroom
 import { VoiceController } from './voice.js';
 
 const byId = (id) => document.getElementById(id);
+const confirmation = byId('command-confirmation');
 let online = false;
 let busy = false;
 let voiceAvailable = false;
 let feedbackTimer;
 let polling = false;
-let commandEpoch = 0;
+let pendingCommand = null;
 
 function toast(message, error = false) {
   clearTimeout(feedbackTimer);
@@ -19,15 +20,17 @@ function toast(message, error = false) {
 }
 
 function availability() {
-  setControlsAvailable(online, busy);
-  byId('command-input').disabled = !online || busy;
-  byId('send-command').disabled = !online || busy;
-  byId('microphone').disabled = !online || !voiceAvailable || (busy && !voice.active);
+  const controlsBusy = busy || pendingCommand !== null;
+  setControlsAvailable(online, controlsBusy);
+  byId('command-input').disabled = !online || controlsBusy;
+  byId('send-command').disabled = !online || controlsBusy;
+  byId('microphone').disabled = !online || !voiceAvailable || (controlsBusy && !voice.active);
+  byId('confirm-command').disabled = !online || busy;
 }
 
 const STATES = {
   idle: 'Tap to speak', listening: 'Listening…', processing: 'Processing your command…',
-  understanding: 'Understanding your command', executing: 'Adjusting your room…',
+  confirming: 'Review your command', executing: 'Adjusting your room…',
   completed: 'All taken care of.', error: 'Let’s try that again.',
 };
 
@@ -72,8 +75,23 @@ function showError(message, data) {
   toast(message, true);
 }
 
+function confirmationQuestion({ intent, device, value }) {
+  const target = { Light: 'bedroom light', Fan: 'fan', AC: 'AC', Curtain: 'curtains' }[device];
+  const action = {
+    TurnOn: `Turn on the ${target}`,
+    TurnOff: `Turn off the ${target}`,
+    Open: `Open the ${target}`,
+    Close: `Close the ${target}`,
+    IncreaseSpeed: `Increase the ${target} speed`,
+    DecreaseSpeed: `Decrease the ${target} speed`,
+    IncreaseTemp: `Raise the ${target} temperature`,
+    DecreaseTemp: `Lower the ${target} temperature`,
+    SetTemp: value == null ? `Set the ${target} temperature` : `Set the ${target} to ${value}°C`,
+  }[intent];
+  return `${action}?`;
+}
+
 async function runCommand(text, source = 'text') {
-  const epoch = ++commandEpoch;
   busy = true;
   transcript(text, source);
   renderPrediction(null);
@@ -84,24 +102,70 @@ async function runCommand(text, source = 'text') {
   setVoiceState('processing', 'Passing your words to the trained language model.');
   try {
     const interpreted = await post('/api/interpret', { text, source });
-    if (epoch !== commandEpoch) return;
     renderPrediction(interpreted.prediction);
-    setVoiceState('understanding', 'Intent and device identified.');
-    // Let the browser display the real prediction before requesting execution.
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    setVoiceState('executing', 'Applying the command to your bedroom.');
-    const result = await post('/api/execute', { command_id: interpreted.command_id });
-    renderBedroom(result);
-    execution(result.message, result.execution.success);
-    busy = false;
-    setVoiceState('completed');
-    toast(result.message);
+    if (interpreted.requires_confirmation === false) {
+      await applyCommand(interpreted.command_id, 'Applying the command.');
+      return;
+    }
+    byId('confirmation-question').textContent = confirmationQuestion(interpreted.prediction);
+    byId('confirmation-transcript').textContent = `${source === 'voice' ? 'You said' : 'You typed'} “${text}”`;
+    confirmation.showModal();
+    pendingCommand = { id: interpreted.command_id, source };
+    byId('execution-result').textContent = 'Waiting for your confirmation.';
+    setVoiceState('confirming');
   } catch (error) {
     showError(error.message, error.data);
   } finally {
     busy = false;
     availability();
   }
+}
+
+function takePendingCommand() {
+  const command = pendingCommand;
+  pendingCommand = null;
+  confirmation.close();
+  return command;
+}
+
+function focusCommandInput(source) {
+  const input = byId(source === 'voice' ? 'microphone' : 'command-input');
+  if (!input.disabled) input.focus({ preventScroll: true });
+}
+
+async function applyCommand(id, progressMessage) {
+  byId('execution-result').textContent = progressMessage;
+  byId('execution-result').className = 'empty-result';
+  setVoiceState('executing', 'Applying the command to your bedroom.');
+  const result = await post('/api/execute', { command_id: id });
+  renderBedroom(result);
+  execution(result.message, result.execution.success);
+  setVoiceState('completed');
+  toast(result.message);
+}
+
+async function confirmCommand() {
+  if (busy || !online || !pendingCommand) return;
+  const { id, source } = takePendingCommand();
+  busy = true;
+  try {
+    await applyCommand(id, 'Applying the confirmed command.');
+  } catch (error) {
+    showError(error.message, error.data);
+  } finally {
+    busy = false;
+    availability();
+    focusCommandInput(source);
+  }
+}
+
+function cancelCommand() {
+  if (!pendingCommand) return;
+  const { source } = takePendingCommand();
+  byId('execution-result').textContent = 'Command canceled.';
+  byId('execution-result').className = 'empty-result';
+  setVoiceState('idle');
+  focusCommandInput(source);
 }
 
 const voice = new VoiceController({
@@ -112,14 +176,20 @@ const voice = new VoiceController({
 });
 
 byId('microphone').addEventListener('click', () => voice.toggle());
+byId('confirm-command').addEventListener('click', confirmCommand);
+byId('cancel-command').addEventListener('click', cancelCommand);
+confirmation.addEventListener('cancel', (event) => {
+  event.preventDefault();
+  cancelCommand();
+});
 byId('command-form').addEventListener('submit', (event) => {
   event.preventDefault();
   const text = byId('command-input').value.trim();
-  if (!busy && online && text) runCommand(text);
+  if (!busy && !pendingCommand && online && text) runCommand(text);
 });
 
 async function manual(command) {
-  if (busy || !online) return;
+  if (busy || pendingCommand || !online) return;
   busy = true;
   transcript(`${command.intent} · ${command.device}${command.value != null ? ` · ${command.value}°C` : ''}`, 'text');
   byId('transcript-heading').textContent = 'Manual control';
@@ -176,7 +246,7 @@ async function connect() {
   notice.hidden = health.model.ready;
   byId('model-notice-text').textContent = health.model.ready ? '' : 'The trained language model is not connected. Voice and text commands cannot control devices yet. Manual controls are ready.';
   connection(true);
-  if (!busy) setVoiceState('idle');
+  if (!busy && !pendingCommand) setVoiceState('idle');
 }
 
 async function poll() {

@@ -150,7 +150,13 @@
         <div class="understanding" aria-label="Command understanding">
           <div class="result-step"><span class="step-number">1</span><div><h3 id="transcript-heading">Recognized speech / typed text</h3><p id="transcript" class="empty-result">Your words will appear here.</p></div></div>
           <div class="result-step"><span class="step-number">2</span><div><h3>Model prediction</h3><div class="prediction-chips" id="prediction"><span class="empty-result">Waiting for a command</span></div></div></div>
-          <div class="result-step"><span class="step-number" id="execution-marker">3</span><div><h3>Device execution</h3><p id="execution-result" class="empty-result">Your room is ready.</p></div></div>
+          <div class="result-step">
+            <span class="step-number" id="execution-marker">3</span>
+            <div>
+              <h3>Device execution</h3>
+              <p id="execution-result" class="empty-result">Your room is ready.</p>
+            </div>
+          </div>
         </div>
         <div class="speech-note"><span class="small-dot"></span><span id="speech-engine">Voice availability depends on your browser.</span></div>
       </aside>
@@ -160,6 +166,14 @@
     <footer class="page-footer"><span><span class="brand-mini" aria-hidden="true">⌂</span> Designed for comfort. Built for independence.</span><span>Virtual bedroom · University NLP project</span></footer>
     <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
+  <dialog id="command-confirmation" class="confirmation-dialog" aria-labelledby="confirmation-question" aria-describedby="confirmation-transcript">
+    <h2 id="confirmation-question"></h2>
+    <p id="confirmation-transcript"></p>
+    <div class="confirmation-actions">
+      <button id="cancel-command" type="button" autofocus>Cancel</button>
+      <button id="confirm-command" type="button">Confirm</button>
+    </div>
+  </dialog>
 </body>
 </html>
 

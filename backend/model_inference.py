@@ -23,7 +23,10 @@ class ModelService:
             return
         try:
             config_file = Path(config_path).resolve()
-            self.config = json.loads(config_file.read_text(encoding="utf-8"))
+            config = json.loads(config_file.read_text(encoding="utf-8"))
+            if not isinstance(config, dict):
+                raise ValueError("The model configuration must be a JSON object.")
+            self.config = config
             artifact_dir = Path(self.config["artifact_dir"])
             if not artifact_dir.is_absolute():
                 artifact_dir = config_file.parent / artifact_dir
@@ -59,7 +62,11 @@ class ModelService:
         return self._predictor is not None
 
     def status(self):
-        return {"ready": self.ready, "code": self.status_code, "message": self.message}
+        status = {"ready": self.ready, "code": self.status_code, "message": self.message}
+        name = self.config.get("name")
+        if isinstance(name, str) and name:
+            status["name"] = name
+        return status
 
     def predict(self, text):
         if not self.ready:

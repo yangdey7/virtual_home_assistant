@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase, mock
 
-from backend.app import create_app
+from backend.app import create_app, local_model_config
 from backend.codemix_inference import temperature_value
 from backend.model_inference import ModelService
 
@@ -67,6 +67,31 @@ class ApiTests(TestCase):
         manual = client.post("/api/control", json={"intent": "IncreaseSpeed", "device": "Fan"})
         self.assertEqual(manual.json["devices"]["fan"]["speed"], 2)
         self.assertEqual(service._predictor.calls, ["Fan on bay nang."])
+
+    def test_confirmation_requires_a_matching_unambiguous_device_mention(self):
+        service = fixture_service({})
+        client = create_app({"TESTING": True}, model_service=service).test_client()
+        cases = (
+            ("Turn on the fan", "Fan", False),
+            ("Mi switch on bay", "Light", False),
+            ("Pangka gi speed increase bay nang", "Fan", False),
+            ("Pardha shut bay", "Curtain", False),
+            ("Set the A/C to 22", "AC", False),
+            ("Adjust the air-conditioner", "AC", False),
+            ("Fan on, yes the ceiling fan", "Fan", False),
+            ("Turn it on", "Light", True),
+            ("Cool down the space", "AC", True),
+            ("Turn on the fan", "Light", True),
+            ("Turn on the light and the fan", "Light", True),
+        )
+        for text, device, requires_confirmation in cases:
+            with self.subTest(text=text, predicted_device=device):
+                service._predictor.output = {"intent": "TurnOn", "device": device, "value": None, "confidence": .99}
+                before = client.get("/api/state").json
+                interpreted = client.post("/api/interpret", json={"text": text, "source": "voice"})
+                self.assertEqual(interpreted.status_code, 200)
+                self.assertIs(interpreted.json["requires_confirmation"], requires_confirmation)
+                self.assertEqual(client.get("/api/state").json, before)
 
     def test_all_actions_through_inference_pipeline(self):
         service = fixture_service({})
@@ -176,4 +201,34 @@ class LoadingAndAdapterTests(TestCase):
                 service = ModelService(config)
             self.assertFalse(service.ready)
             client = create_app({"TESTING": True}, model_service=service).test_client()
+            self.assertEqual(client.post("/api/control", json={"device": "Light", "intent": "TurnOn"}).status_code, 200)
+
+    def test_unreadable_local_export_reports_failure_without_stopping_startup(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            artifact_dir = root / "models" / "distilbert_multitask_model"
+            artifact_dir.mkdir(parents=True)
+            weights = artifact_dir / "model.safetensors"
+            weights.touch()
+            config = root / "model_config.distilbert_multitask.json"
+            config.write_text(json.dumps({
+                "artifact_dir": "models/distilbert_multitask_model",
+                "factory": "backend.distilbert_multitask_inference:load_predictor",
+            }), encoding="utf-8")
+
+            stat = Path.stat
+
+            def stat_with_denied_weights(path, *args, **kwargs):
+                if path == weights:
+                    raise PermissionError(13, "Access denied", str(path))
+                return stat(path, *args, **kwargs)
+
+            with mock.patch("backend.app.ROOT", root), mock.patch.object(Path, "stat", stat_with_denied_weights):
+                with self.assertLogs("backend.app", level="WARNING"):
+                    selected = local_model_config()
+                self.assertEqual(selected, config)
+                with self.assertLogs("backend.model_inference", level="ERROR"):
+                    client = create_app({"MODEL_CONFIG": selected, "WHISPER_MODEL": None}).test_client()
+
+            self.assertEqual(client.get("/api/health").json["model"]["code"], "model_load_failed")
             self.assertEqual(client.post("/api/control", json={"device": "Light", "intent": "TurnOn"}).status_code, 200)

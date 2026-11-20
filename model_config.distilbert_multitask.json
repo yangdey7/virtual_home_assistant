@@ -1,0 +1,6 @@
+{
+  "name": "DistilBERT (multitask intent and device)",
+  "factory": "backend.distilbert_multitask_inference:load_predictor",
+  "artifact_dir": "models/distilbert_multitask_model",
+  "confidence_threshold": 0.8
+}

@@ -160,24 +160,83 @@ test('fan gradually decelerates and can restart while still coasting', async ({ 
   expect(await fanRotationSpeed(page)).toBe(0);
 });
 
-test('prediction is displayed before execution, and confirmation waits for the controller', async ({ page, request }) => {
+test('typed commands without a device name wait for confirmation and show success after execution', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'TurnOff', device: 'Fan' } });
   await predict(request, { intent: 'TurnOn', device: 'Fan', value: null });
   await ready(page);
+  let executeCalls = 0;
   let release;
   const gate = new Promise((resolve) => { release = resolve; });
-  await page.route('**/api/execute', async (route) => { await gate; await route.continue(); });
-  await page.locator('#command-input').fill('Fan on bay nang.');
+  await page.route('**/api/execute', async (route) => {
+    executeCalls += 1;
+    await gate;
+    await route.continue();
+  });
+  await page.locator('#command-input').fill('Turn it on');
   await page.locator('#send-command').click();
+  const dialog = page.getByRole('dialog', { name: 'Turn on the fan?' });
+  await expect(dialog).toBeVisible();
+  expect(await dialog.evaluate((element) => element.matches(':modal'))).toBe(true);
+  await expect(dialog).toContainText('You typed “Turn it on”');
   await expect(page.locator('#prediction')).toContainText('Intent: TurnOn');
-  await expect(page.locator('#voice-label')).toHaveText('Adjusting your room…');
-  await expect(page.locator('#execution-result')).toHaveText('Waiting for model understanding.');
-  release();
+  await expect(page.locator('#execution-result')).toHaveText('Waiting for your confirmation.');
+  await expect(page.locator('#bedroom')).toHaveAttribute('data-fan', 'OFF');
+  await expect(page.locator('#cancel-command')).toBeFocused();
+  expect(executeCalls).toBe(0);
+  try {
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#confirm-command')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => executeCalls).toBe(1);
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('#execution-result')).toHaveText('Applying the confirmed command.');
+    await expect(page.locator('#bedroom')).toHaveAttribute('data-fan', 'OFF');
+  } finally {
+    release();
+  }
   await expect(page.locator('#execution-result')).toHaveText('Bedroom fan has been switched on.');
   await expect(page.locator('#bedroom')).toHaveAttribute('data-fan', 'ON');
   await expect(page.locator('#transcript-heading')).toHaveText('Typed command');
 });
 
-test('recognized speech reaches the same model adapter and controller', async ({ page, request }) => {
+test('typed commands with a matching code-mixed device name execute directly', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'TurnOff', device: 'Fan' } });
+  await predict(request, { intent: 'TurnOn', device: 'Fan' });
+  await ready(page);
+  await page.locator('#command-input').fill('Pangka on bay nang');
+  await page.locator('#send-command').click();
+  await expect(page.locator('#execution-result')).toHaveText('Bedroom fan has been switched on.');
+  await expect(page.locator('#bedroom')).toHaveAttribute('data-fan', 'ON');
+  await expect(page.locator('#command-confirmation')).toBeHidden();
+});
+
+test('canceling a confident guess preserves the room and releases the inputs', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'TurnOff', device: 'Light' } });
+  await predict(request, { intent: 'TurnOn', device: 'Light', confidence: .974 });
+  await ready(page);
+  let executeCalls = 0;
+  page.on('request', (sent) => {
+    if (new URL(sent.url()).pathname === '/api/execute') executeCalls += 1;
+  });
+  for (const [text, dismiss] of [['Turn it on', 'button'], ['Turn on the fan', 'escape']]) {
+    await page.locator('#command-input').fill(text);
+    await page.locator('#send-command').click();
+    const dialog = page.getByRole('dialog', { name: 'Turn on the bedroom light?' });
+    await expect(dialog).toBeVisible();
+    if (dismiss === 'button') await dialog.getByRole('button', { name: 'Cancel' }).click();
+    else await page.keyboard.press('Escape');
+    await expect(page.locator('#execution-result')).toHaveText('Command canceled.');
+    await expect(page.locator('#command-confirmation')).toBeHidden();
+    await expect(page.locator('#command-input')).toBeFocused();
+    await expect(button(page, 'Light', 'TurnOn')).toBeEnabled();
+  }
+  const snapshot = await (await request.get('/api/state')).json();
+  expect(snapshot.devices.light.state).toBe('OFF');
+  expect(executeCalls).toBe(0);
+});
+
+test('recognized speech with a matching device name executes directly', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'Close', device: 'Curtain' } });
   await predict(request, { intent: 'Open', device: 'Curtain' });
   await speechFixture(page, { text: 'Open the curtains' });
   await ready(page);
@@ -186,7 +245,22 @@ test('recognized speech reaches the same model adapter and controller', async ({
   await expect(page.locator('#transcript-heading')).toHaveText('Speech recognition output');
   await expect(page.locator('#bedroom')).toHaveAttribute('data-curtain', 'OPEN');
   await expect(page.locator('#execution-result')).toHaveText('Bedroom curtains are open.');
+  await expect(page.locator('#command-confirmation')).toBeHidden();
   await expect(page.locator('#history-list .history-entry').first()).toContainText('Voice command');
+});
+
+test('recognized speech without a device name waits for confirmation', async ({ page, request }) => {
+  await request.post('/api/control', { data: { intent: 'Close', device: 'Curtain' } });
+  await predict(request, { intent: 'Open', device: 'Curtain' });
+  await speechFixture(page, { text: 'Open them' });
+  await ready(page);
+  await page.locator('#microphone').click();
+  const dialog = page.getByRole('dialog', { name: 'Open the curtains?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('You said “Open them”');
+  await expect(page.locator('#bedroom')).toHaveAttribute('data-curtain', 'CLOSED');
+  await dialog.getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.locator('#bedroom')).toHaveAttribute('data-curtain', 'OPEN');
 });
 
 for (const [behavior, message] of [
@@ -208,10 +282,11 @@ test('low confidence preserves the room and displays clarification', async ({ pa
   await predict(request, { intent: 'TurnOn', device: 'Light', confidence: .2 });
   await ready(page);
   const before = await page.locator('#bedroom').getAttribute('data-light');
-  await page.locator('#command-input').fill('Maybe do something');
+  await page.locator('#command-input').fill('Turn on the light');
   await page.locator('#send-command').click();
   await expect(page.locator('#execution-result')).toContainText('not confident');
   await expect(page.locator('#prediction')).toContainText('20% confidence');
+  await expect(page.locator('#command-confirmation')).toBeHidden();
   await expect(page.locator('#bedroom')).toHaveAttribute('data-light', before);
   await expect(page.locator('#history-list .history-entry').first()).toContainText('Not executed');
 });
@@ -219,7 +294,7 @@ test('low confidence preserves the room and displays clarification', async ({ pa
 test('invalid inferred commands display controller errors without success', async ({ page, request }) => {
   await predict(request, { intent: 'SetTemp', device: 'AC', value: null });
   await ready(page);
-  await page.locator('#command-input').fill('Set the temperature');
+  await page.locator('#command-input').fill('Set the AC temperature');
   await page.locator('#send-command').click();
   await expect(page.locator('#execution-result')).toContainText('whole-number temperature');
   await expect(page.locator('#execution-marker')).toHaveClass('step-number error');
